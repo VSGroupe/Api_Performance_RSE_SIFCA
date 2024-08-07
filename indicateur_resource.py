@@ -485,18 +485,40 @@ class EntiteExportAllData(Resource):
             result.append(data[0])
         return result
 
-    def getJson(self,start,end,dataEntite,dataRealise):
+    def getJson(self,start,end,dataEntite,dataRealise, dataEntiteList, realisesSousEntitesList):
         kList = []
         for i in range(start - 1, end - 1):
             kDoc = {
-                    "numero": i + 1,
+                    "numero": dataEntite[i]["numero"], # i + 1
                     "reference": dataEntite[i]["reference"],
                     "intitule": dataEntite[i]["intitule"],
                     "unite": dataEntite[i]["unite"],
-                    "realise": dataRealise[i]
+                    "realise": dataRealise[dataEntite[i]["numero"] -1],
+                    "dataJan": dataEntiteList[dataEntite[i]["numero"] - 1][1],
+                    "dataFeb": dataEntiteList[dataEntite[i]["numero"] - 1][2],
+                    "dataMar": dataEntiteList[dataEntite[i]["numero"] - 1][3],
+                    "dataApr": dataEntiteList[dataEntite[i]["numero"] - 1][4],
+                    "dataMay": dataEntiteList[dataEntite[i]["numero"] - 1][5],
+                    "dataJun": dataEntiteList[dataEntite[i]["numero"] - 1][6],
+                    "dataJul": dataEntiteList[dataEntite[i]["numero"] - 1][7],
+                    "dataAug": dataEntiteList[dataEntite[i]["numero"] - 1][8],
+                    "dataSep": dataEntiteList[dataEntite[i]["numero"] - 1][9],
+                    "dataOct": dataEntiteList[dataEntite[i]["numero"] - 1][10],
+                    "dataNov": dataEntiteList[dataEntite[i]["numero"] - 1][11],
+                    "dataDec": dataEntiteList[dataEntite[i]["numero"] - 1][12],
                 }
+            if len(realisesSousEntitesList) != 0:
+                for sousEntite in realisesSousEntitesList:
+                    kDoc[f"sousEntite{realisesSousEntitesList.index(sousEntite)}"] = realisesSousEntitesList[realisesSousEntitesList.index(sousEntite)][i]
             kList.append(kDoc)
         return kList
+
+    def getDataEntite(self, idEntite, annee):
+        id = f"{idEntite}_{annee}"
+        response = supabase.table('DataIndicateur').select("*").eq("id", id).execute().data
+        data = response[0]
+
+        return data["valeurs"]
 
     def post(self):
         args = request.get_json()
@@ -504,6 +526,8 @@ class EntiteExportAllData(Resource):
 
             annee = args["annee"]
             entiteId = args["entiteId"]
+            sousEntites = []
+            dataValeursListSousEntites = []
 
             ###################################
 
@@ -514,22 +538,27 @@ class EntiteExportAllData(Resource):
             entiteName = dataEntite["nom_entite"]
             color = dataEntite["couleur"]
 
-            id = f"{entiteId}_{annee}"
-            response = supabase.table('DataIndicateur').select("*").eq("id", id).execute().data
-            data = response[0]
-            dataValeurList = data["valeurs"]
+            dataValeurList = self.getDataEntite(entiteId, annee)
 
             dataRealise = self.getRealise(dataValeurList)
 
             #################################
+            
+            if len(sousEntites) != 0:
+                for entity in sousEntites:
+                    datasSousEntite = self.getDataEntite(entity, annee)
+                    realiseSousEntite = self.getRealise(datasSousEntite)
+                    dataValeursListSousEntites.append(realiseSousEntite)
 
-            kIndicateur = supabase.table("Indicateurs").select("*").execute()
+
+            #################################
+
             kIndicateur = supabase.table("Indicateurs").select("*").order("axe, enjeu, reference", desc=False).execute()
             dataEntite = kIndicateur.data
 
             ## Général
 
-            allRows = self.getJson(1,288,dataEntite,dataRealise)
+            allRows = self.getJson(1,288,dataEntite,dataRealise, dataValeurList, dataValeursListSousEntites)
 
             return {
                 "entreprise": "Groupe SIFCA",
@@ -539,5 +568,6 @@ class EntiteExportAllData(Resource):
                 "color":color,
                 "data": allRows
             }
-        except :
+        except Exception as e :
+            print(e)
             return make_response({"status":False},404)

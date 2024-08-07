@@ -422,7 +422,7 @@ def formuleCalcules(index, dataValeurList):
             # L28 + L29
             list = []
             A = dataValeurList[27]
-            B = dataValeurList[29]
+            B = dataValeurList[28]
             for i in range(len(A)):
                 valeur = AplusB(A[i], B[i])
                 list.append(valeur)
@@ -1037,7 +1037,7 @@ def formuleCalcules(index, dataValeurList):
                 list.append(valeur)
             return list
         elif index == 227:
-            # (L222 * 3.44 + L223 * 2.6 + L224 * 3 + L225 * 2.96 + L226 * 3.64 ) / 1000; voir cas realise
+            # (L222 * 3.44 + L223 * 2.6 + L224 * 3 + L225 * 2.96 + L226 * 3.64 ) / 1000;
             list = [None, None, None, None, None, None, None, None, None, None, None, None, None]
             A = dataValeurList[221]
             B = dataValeurList[222]
