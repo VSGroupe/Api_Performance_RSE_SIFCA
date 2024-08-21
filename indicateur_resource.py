@@ -234,7 +234,7 @@ class DeleteDataEntiteIndicateur(Resource):
         # Formule Colonne ligne calculés
         for index in calculated_keys :
 
-            dataRow = formuleCalcules(index, dataValeurListN1)
+            dataRow = formuleCalcules(index, dataValeurListN1, dataValeurListN2)
             if dataRow != None:
                 dataValeurListN1[index - 1] = dataRow
         
