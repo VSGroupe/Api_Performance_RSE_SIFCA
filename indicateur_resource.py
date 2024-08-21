@@ -98,7 +98,7 @@ class UpdateDataEntiteIndicateur(Resource):
         # Formule Colonne ligne calculés
         for index in calculated_keys :
 
-            dataRow = formuleCalcules(index, dataValeurListN1)
+            dataRow = formuleCalcules(index, dataValeurListN1, dataValeurListN2)
             if dataRow != None:
                 dataValeurListN1[index - 1] = dataRow
         
@@ -477,6 +477,8 @@ class UpdateValidationEntiteIndicateur(Resource):
 
         return {"status":True}
 
+
+
 class EntiteExportAllData(Resource):
 
     def getRealise(self,dataValeurs):
@@ -553,7 +555,7 @@ class EntiteExportAllData(Resource):
 
             #################################
 
-            kIndicateur = supabase.table("Indicateurs").select("*").order("axe, enjeu, reference", desc=False).execute()
+            kIndicateur = supabase.table("Indicateurs").select("*").order("axe, index_ordering, reference", desc=False).execute()
             dataEntite = kIndicateur.data
 
             ## Général
@@ -562,6 +564,101 @@ class EntiteExportAllData(Resource):
 
             return {
                 "entreprise": "Groupe SIFCA",
+                "filiale": f"{filiale}",
+                "entite": f"{entiteName}",
+                "annee": annee,
+                "color":color,
+                "data": allRows
+            }
+        except Exception as e :
+            print(e)
+            return make_response({"status":False},404)
+
+class EntiteExportENAllData(Resource):
+
+    def getRealise(self,dataValeurs):
+        result = []
+        for data in dataValeurs :
+            result.append(data[0])
+        return result
+
+    def getJson(self,start,end,dataEntite,dataRealise, dataEntiteList, realisesSousEntitesList):
+        kList = []
+        for i in range(start - 1, end - 1):
+            kDoc = {
+                    "numero": dataEntite[i]["numero"],
+                    "reference": dataEntite[i]["reference"],
+                    "intitule": dataEntite[i]["intitule"],
+                    "unite": dataEntite[i]["unite"],
+                    "realise": dataRealise[dataEntite[i]["numero"] -1],
+                    "dataJan": dataEntiteList[dataEntite[i]["numero"] - 1][1],
+                    "dataFeb": dataEntiteList[dataEntite[i]["numero"] - 1][2],
+                    "dataMar": dataEntiteList[dataEntite[i]["numero"] - 1][3],
+                    "dataApr": dataEntiteList[dataEntite[i]["numero"] - 1][4],
+                    "dataMay": dataEntiteList[dataEntite[i]["numero"] - 1][5],
+                    "dataJun": dataEntiteList[dataEntite[i]["numero"] - 1][6],
+                    "dataJul": dataEntiteList[dataEntite[i]["numero"] - 1][7],
+                    "dataAug": dataEntiteList[dataEntite[i]["numero"] - 1][8],
+                    "dataSep": dataEntiteList[dataEntite[i]["numero"] - 1][9],
+                    "dataOct": dataEntiteList[dataEntite[i]["numero"] - 1][10],
+                    "dataNov": dataEntiteList[dataEntite[i]["numero"] - 1][11],
+                    "dataDec": dataEntiteList[dataEntite[i]["numero"] - 1][12],
+                }
+            if len(realisesSousEntitesList) != 0:
+                for sousEntite in realisesSousEntitesList:
+                    kDoc[f"sousEntite{realisesSousEntitesList.index(sousEntite)}"] = realisesSousEntitesList[realisesSousEntitesList.index(sousEntite)][i]
+            kList.append(kDoc)
+        return kList
+
+    def getDataEntite(self, idEntite, annee):
+        id = f"{idEntite}_{annee}"
+        response = supabase.table('DataIndicateur').select("*").eq("id", id).execute().data
+        data = response[0]
+
+        return data["valeurs"]
+
+    def post(self):
+        args = request.get_json()
+        try :
+
+            annee = args["annee"]
+            entiteId = args["entiteId"]
+            sousEntites = []
+            dataValeursListSousEntites = []
+
+            ###################################
+
+            kEntite = supabase.table("Entites").select("*").eq("id_entite", entiteId).execute()
+            dataEntite = kEntite.data[0]
+
+            filiale = dataEntite["filiale"]
+            entiteName = dataEntite["nom_entite"]
+            color = dataEntite["couleur"]
+
+            dataValeurList = self.getDataEntite(entiteId, annee)
+
+            dataRealise = self.getRealise(dataValeurList)
+
+            #################################
+            
+            if len(sousEntites) != 0:
+                for entity in sousEntites:
+                    datasSousEntite = self.getDataEntite(entity, annee)
+                    realiseSousEntite = self.getRealise(datasSousEntite)
+                    dataValeursListSousEntites.append(realiseSousEntite)
+
+
+            #################################
+
+            kIndicateur = supabase.table("Indicateurs_en").select("*").order("axe, index_ordering, reference", desc=False).execute()
+            dataEntite = kIndicateur.data
+
+            ## Général
+
+            allRows = self.getJson(1,288,dataEntite,dataRealise, dataValeurList, dataValeursListSousEntites)
+
+            return {
+                "entreprise": "SIFCA Group",
                 "filiale": f"{filiale}",
                 "entite": f"{entiteName}",
                 "annee": annee,

@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_restful import Api, Resource
 
 from consolidation_ressource import ScriptConsolidation
-from indicateur_resource import ChangeStatusEntityIndic, DeleteDataEntiteIndicateur, GetDataEntiteIndicateur, UpdateDataEntiteIndicateur, UpdateAllDataEntiteIndicateur, UpdateDataInApiDB, \
+from indicateur_resource import ChangeStatusEntityIndic, DeleteDataEntiteIndicateur, EntiteExportENAllData, GetDataEntiteIndicateur, UpdateDataEntiteIndicateur, UpdateAllDataEntiteIndicateur, UpdateDataInApiDB, \
     UpdateValidationEntiteIndicateur, EntiteExportAllData, UpdateDataEntiteIndicateurFromSupabase
 from suivi_indicateur import SuiviDataIndicateur
 
@@ -110,6 +110,7 @@ api.add_resource(UpdateAllDataEntiteIndicateur, '/data-entite-indicateur/update-
 api.add_resource(UpdateDataEntiteIndicateurFromSupabase, '/data-entite-indicateur/update-data-from-supabase')
 api.add_resource(UpdateValidationEntiteIndicateur, '/data-entite-indicateur/update-validation')
 api.add_resource(EntiteExportAllData, '/data-entite-indicateur/export-all-data')
+api.add_resource(EntiteExportENAllData, '/data-entite-indicateur/export-en-all-data')
 
 api.add_resource(ScriptConsolidation, '/data-entite-indicateur/consolidation')
 api.add_resource(SuiviDataIndicateur, '/data-entite-suivi')
