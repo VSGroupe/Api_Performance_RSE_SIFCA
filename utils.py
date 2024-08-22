@@ -638,18 +638,9 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 184:
-            # L82 / L49
+            # L182 / L49 ok
             list = []
             A = dataValeurList[181]
-            B = dataValeurList[48]
-            for i in range(len(A)):
-                valeur = AsurB(A[i], B[i])
-                list.append(valeur)
-            return list
-        elif index == 180:
-            # L185 / L49
-            list = []
-            A = dataValeurList[184]
             B = dataValeurList[48]
             for i in range(len(A)):
                 valeur = AsurB(A[i], B[i])
@@ -665,7 +656,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 192:
-            # L191 / L190
+            # L191 / L190 ok
             list = []
             A = dataValeurList[190]
             B = dataValeurList[189]
@@ -674,7 +665,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 197:
-            # L195 + L196
+            # L195 + L196 ok
             list = []
             A = dataValeurList[194]
             B = dataValeurList[195]
@@ -701,7 +692,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 215:
-            # L214 / L49
+            # L214 / L49 ok
             list = []
             A = dataValeurList[213]
             B = dataValeurList[48]
@@ -710,7 +701,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 240:
-            # L239 + L236
+            # L239 + L236 ok
             list = []
             A = dataValeurList[238]
             B = dataValeurList[235]
@@ -728,7 +719,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 244:
-            # L243 / L220
+            # L243 / L220 ok
             list = []
             A = dataValeurList[242]
             B = dataValeurList[219]
@@ -737,7 +728,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 258:
-            # L256 / L257
+            # L256 / L257 ok
             list = []
             A = dataValeurList[255]
             B = dataValeurList[256]
@@ -773,7 +764,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 271:
-            # L269 / L270
+            # L269 / L270 ok
             list = []
             A = dataValeurList[268]
             B = dataValeurList[269]
@@ -782,7 +773,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 274:
-            # L272 + L273
+            # L272 + L273 ok
             list = []
             A = dataValeurList[271]
             B = dataValeurList[272]
@@ -791,16 +782,16 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 277:
-            # L275 + L276
+            # L275 + L276 ok
             list = []
             A = dataValeurList[274]
             B = dataValeurList[275]
             for i in range(len(A)):
-                valeur = AsurB(A[i], B[i])
+                valeur = AplusB(A[i], B[i])
                 list.append(valeur)
             return list
         elif index == 280:
-            # L278 + L279
+            # L278 + L279 ok
             list = []
             A = dataValeurList[277]
             B = dataValeurList[278]
@@ -818,7 +809,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 285:
-            # INC7-013 = L284 / L218
+            # INC7-013 = L284 / L218 ok
             list = []
             A = dataValeurList[283]
             B = dataValeurList[217]
@@ -827,7 +818,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 287:
-            # INC7-016 = L219 / L286
+            # INC7-016 = L219 / L286 ok
             list = []
             A = dataValeurList[218]
             B = dataValeurList[285]
@@ -836,7 +827,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 216:
-            # INC7-019 = L281 / L288
+            # INC7-019 = L281 / L288 ok
             list = []
             A = dataValeurList[280]
             B = dataValeurList[287]
@@ -954,7 +945,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 259:
-            # L249 - L253
+            # L249 - L253 ok
             list = []
             A = dataValeurList[248]
             B = dataValeurList[252]
@@ -1031,7 +1022,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 227:
-            # (L222 * 3.44 + L223 * 2.6 + L224 * 3 + L225 * 2.96 + L226 * 3.64 ) / 1000;
+            # (L222 * 3.44 + L223 * 2.6 + L224 * 3 + L225 * 2.96 + L226 * 3.64 ) / 1000 ok
             list = [None, None, None, None, None, None, None, None, None, None, None, None, None]
             A = dataValeurList[221]
             B = dataValeurList[222]
@@ -1053,7 +1044,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
 
             return list
         elif index == 249:
-            # L246 + L247 + L248
+            # L246 + L247 + L248 ok
             list = []
             A = dataValeurList[245]
             B = dataValeurList[246]
@@ -1064,7 +1055,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 253:
-            # L250 + L251 + L252
+            # L250 + L251 + L252 ok
             list = []
             A = dataValeurList[249]
             B = dataValeurList[250]
@@ -1075,7 +1066,7 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 269:
-            # L265 + L266 + L267
+            # L265 + L266 + L267 ok
             list = []
             A = dataValeurList[264]
             B = dataValeurList[265]
@@ -1110,82 +1101,73 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 list.append(valeur)
             return list
         elif index == 190:
-            # L189 / 8
+            # L189 / 24 ok
             list = []
             A = dataValeurList[188]
-            V = 8
+            V = 24
             for i in range(len(A)):
                 valeur = AsurV(A[i], V)
                 list.append(valeur)
             return list
         elif index == 198:
-            # L198 x 1000000 / L189
+            # L193 x 1000000 / L189 ok
             list = []
-            A = dataValeurList[197]
+            A = dataValeurList[192]
             B = 1000000
             C = dataValeurList[188]
             for i in range(len(A)):
-                valeur = AsurV(A[i], B)
-                list.append(valeur)
-            D = list
-            list2 = []
-            for i in range(len(C)):
-                valeur = AsurV(D[i], C)
-                list2.append(valeur)
-            return list2
+                partResult = AfoisB(A[i], B)
+                finalResult = AsurV(partResult, C[i])
+                list.append(finalResult)
+            return list
         elif index == 199:
-            # L194 x 1000 / L189
+            # L194 x 1000 / L189 ok
             list = []
             A = dataValeurList[193]
             B = 1000
             C = dataValeurList[188]
             for i in range(len(A)):
-                valeur = AsurV(A[i], B)
-                list.append(valeur)
-            D = list
-            list2 = []
-            for i in range(len(C)):
-                valeur = AsurB(D[i], C[i])
-                list2.append(valeur)
-            return list2
+                partResult = AfoisB(A[i], B)
+                finalResult = AsurV(partResult, C[i])
+                list.append(finalResult)
+            return list
         elif index == 231:
-            # L229 x 2,7 + L230 x 3,16
+            # (L229 x 2,7 + L230 x 3,16) / 1000 ok
             list = []
             A = dataValeurList[228]
-            B = 2.7
-            C = dataValeurList[229]
-            D = 3.16
+            B = dataValeurList[229]
+            coefList = [2.7, 3.16]
+            setList = [A, B]
 
             for i in range(len(A)):
-                valeur = AfoisB(A[i], B)
+                total = None
+                for j in range(len(setList)):
+                    product = AfoisB(setList[j][i], coefList[j])
+                    total = AplusB(total, product)
+                valeur = AsurB(total, 1000)
                 list.append(valeur)
-            E = list
-            list2 = []
-            for i in range(len(C)):
-                valeur = AfoisB(C[i], D)
-                list2.append(valeur)
-            F = list2
-            list3 = []
-            for i in range(len(E)):
-                valeur = AfoisB(E[i], F[i])
-                list3.append(valeur)
-            return  list3
+
+            return list
 
         elif index == 234:
-            # L232 x 2,7 + L233 x 3,04
+            # (L232 x 2,7 + L233 x 3,04) / 1000 ok
             list = []
             A = dataValeurList[231]
-            B = 2.7
-            C = dataValeurList[232]
-            D = 3.04
+            B = dataValeurList[232]
+            coefList = [2.7, 3.04]
+            setList = [A, B]
+
             for i in range(len(A)):
-                E = AfoisB(A[i], B)
-                F = AfoisB(C[i], D)
-                valeur = AplusB(E, F)
+                total = None
+                for j in range(len(setList)):
+                    product = AfoisB(setList[j][i], coefList[j])
+                    total = AplusB(total, product)
+                valeur = AsurB(total, 1000)
                 list.append(valeur)
+
             return list
         elif index == 239:
-            # L238 x 0,445 / 1000
+            # (L238 x 0,445) / 1000 ok
             list = []
             A = dataValeurList[237]
             B = 0.445
@@ -1255,7 +1237,213 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
                 valeur = AsurB(A[i], B[i])
                 list.append(valeur)
             return list
-              
+        elif index == 156:
+            # L154 + L155 ok
+            list = []
+            A = dataValeurList[153]
+            B = dataValeurList[154]
+            for i in range(len(A)):
+                valeur = AplusB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 157:
+            # L156 / L56 ok
+            list = []
+            A = dataValeurList[155]
+            B = dataValeurList[55]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 158:
+            # L154 / L65 ok
+            list = []
+            A = dataValeurList[153]
+            B = dataValeurList[64]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 159:
+            # L155 / L61 ok
+            list = []
+            A = dataValeurList[154]
+            B = dataValeurList[60]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 160:
+            # L158 / L159 ok
+            list = []
+            A = dataValeurList[157]
+            B = dataValeurList[158]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 163:
+            # L161 + L162 ok
+            list = []
+            A = dataValeurList[160]
+            B = dataValeurList[161]
+            for i in range(len(A)):
+                valeur = AplusB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 164:
+            # L163 / L57 ok
+            list = []
+            A = dataValeurList[162]
+            B = dataValeurList[56]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 165:
+            # L161 / L66 ok
+            list = []
+            A = dataValeurList[160]
+            B = dataValeurList[65]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 166:
+            # L162 / L62 ok
+            list = []
+            A = dataValeurList[161]
+            B = dataValeurList[61]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 167:
+            # L165 / L166 ok
+            list = []
+            A = dataValeurList[164]
+            B = dataValeurList[165]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 170:
+            # L168 + L169 ok
+            list = []
+            A = dataValeurList[167]
+            B = dataValeurList[168]
+            for i in range(len(A)):
+                valeur = AplusB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 171:
+            # L170 / L58 ok
+            list = []
+            A = dataValeurList[169]
+            B = dataValeurList[57]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 172:
+            # L168 / L67 ok
+            list = []
+            A = dataValeurList[167]
+            B = dataValeurList[66]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 173:
+            # L169 / L63 ok
+            list = []
+            A = dataValeurList[168]
+            B = dataValeurList[62]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 174:
+            # L172 / L173 ok
+            list = []
+            A = dataValeurList[171]
+            B = dataValeurList[172]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 177:
+            # L175 + L176 ok
+            list = []
+            A = dataValeurList[174]
+            B = dataValeurList[175]
+            for i in range(len(A)):
+                valeur = AplusB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 178:
+            # L177 / L59 ok
+            list = []
+            A = dataValeurList[176]
+            B = dataValeurList[58]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 179:
+            # L175 / L68 ok
+            list = []
+            A = dataValeurList[174]
+            B = dataValeurList[67]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list   
+        elif index == 180:
+            # L176 / L64 ok
+            list = []
+            A = dataValeurList[175]
+            B = dataValeurList[63]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 181:
+            # L179 / L180
+            list = []
+            A = dataValeurList[178]
+            B = dataValeurList[179]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 186:
+            # L185 / L49 ok
+            list = []
+            A = dataValeurList[184]
+            B = dataValeurList[48]
+            for i in range(len(A)):
+                valeur = AsurB(A[i], B[i])
+                list.append(valeur)
+            return list
+        elif index == 236:
+            # L227 + L231 + L234; realise = sum(janv...dec) ok
+            list = [None, None, None, None, None, None, None, None, None, None, None, None, None]                  
+            A = dataValeurList[226]
+            B = dataValeurList[230]
+            C = dataValeurList[233]
+            setList = [A, B, C]
+
+            for i in range(1, len(A)):
+                total = None
+                for j in range(len(setList)):
+                    total = AplusB(total, setList[j][i])
+                list[i] = total
+
+            list[0] = sommeList(list)
+
+            return list
+
         return None
     except:
         return None
