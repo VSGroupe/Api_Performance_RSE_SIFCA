@@ -494,7 +494,9 @@ class EntiteExportAllData(Resource):
                     "numero": dataEntite[i]["numero"], # i + 1
                     "reference": dataEntite[i]["reference"],
                     "intitule": dataEntite[i]["intitule"],
+                    "processus": dataEntite[i]["processus"],
                     "unite": dataEntite[i]["unite"],
+                    "type": dataEntite[i]["type"],
                     "realise": dataRealise[dataEntite[i]["numero"] -1],
                     "dataJan": dataEntiteList[dataEntite[i]["numero"] - 1][1],
                     "dataFeb": dataEntiteList[dataEntite[i]["numero"] - 1][2],
