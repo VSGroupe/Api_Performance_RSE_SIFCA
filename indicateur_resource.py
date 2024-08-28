@@ -408,11 +408,14 @@ class UpdateDataInApiDB(Resource):
 
         for entity in entitiesList:
             idEntity = f"{entity}_2024"
-            dataListFromSupabase = supabase.table('DataIndicateur').select("valeurs").eq("id", idEntity).execute().data
+            dataListFromSupabase = supabase.table('DataIndicateur').select("valeurs", "validations").eq("id", idEntity).execute().data
             dataValeuListApi = readDataJson(entity, f"{entity}_data_2024.json")
+            dataValidationsApi = readDataJson(entity, f"{entity}_validation_2024.json")
             print(entity)
             dataValeuListApi = dataListFromSupabase[0]["valeurs"]
+            dataValidationsApi = dataListFromSupabase[0]["validations"]
             saveDataInJson(dataValeuListApi, entity, f"{entity}_data_2024.json")
+            saveDataInJson(dataValidationsApi, entity, f"{entity}_validation_2024.json")
         
 
         return {"status": True}
@@ -487,9 +490,10 @@ class EntiteExportAllData(Resource):
             result.append(data[0])
         return result
 
-    def getJson(self,start,end,dataEntite,dataRealise, dataEntiteList, realisesSousEntitesList):
+    def getJson(self,start,end,dataEntite, dataRealise, realiseValidationEntite,  dataEntiteList, validationsEntite, realisesSousEntitesList, validationSousEntites, sousEntitesStringList):
         kList = []
         for i in range(start - 1, end - 1):
+            index = dataEntite[i]["numero"] - 1
             kDoc = {
                     "numero": dataEntite[i]["numero"], # i + 1
                     "reference": dataEntite[i]["reference"],
@@ -497,23 +501,25 @@ class EntiteExportAllData(Resource):
                     "processus": dataEntite[i]["processus"],
                     "unite": dataEntite[i]["unite"],
                     "type": dataEntite[i]["type"],
-                    "realise": dataRealise[dataEntite[i]["numero"] -1],
-                    "dataJan": dataEntiteList[dataEntite[i]["numero"] - 1][1],
-                    "dataFeb": dataEntiteList[dataEntite[i]["numero"] - 1][2],
-                    "dataMar": dataEntiteList[dataEntite[i]["numero"] - 1][3],
-                    "dataApr": dataEntiteList[dataEntite[i]["numero"] - 1][4],
-                    "dataMay": dataEntiteList[dataEntite[i]["numero"] - 1][5],
-                    "dataJun": dataEntiteList[dataEntite[i]["numero"] - 1][6],
-                    "dataJul": dataEntiteList[dataEntite[i]["numero"] - 1][7],
-                    "dataAug": dataEntiteList[dataEntite[i]["numero"] - 1][8],
-                    "dataSep": dataEntiteList[dataEntite[i]["numero"] - 1][9],
-                    "dataOct": dataEntiteList[dataEntite[i]["numero"] - 1][10],
-                    "dataNov": dataEntiteList[dataEntite[i]["numero"] - 1][11],
-                    "dataDec": dataEntiteList[dataEntite[i]["numero"] - 1][12],
+                    "realise": dataRealise[index],
+                    "dataJan": dataEntiteList[index][1],
+                    "dataFeb": dataEntiteList[index][2],
+                    "dataMar": dataEntiteList[index][3],
+                    "dataApr": dataEntiteList[index][4],
+                    "dataMay": dataEntiteList[index][5],
+                    "dataJun": dataEntiteList[index][6],
+                    "dataJul": dataEntiteList[index][7],
+                    "dataAug": dataEntiteList[index][8],
+                    "dataSep": dataEntiteList[index][9],
+                    "dataOct": dataEntiteList[index][10],
+                    "dataNov": dataEntiteList[index][11],
+                    "dataDec": dataEntiteList[index][12],
+                    "allValidationsList": [realiseValidationEntite[index], validationsEntite[index][1], validationsEntite[index][2], validationsEntite[index][3], validationsEntite[index][4], validationsEntite[index][5], validationsEntite[index][6], validationsEntite[index][7], validationsEntite[index][8], validationsEntite[index][9], validationsEntite[index][10], validationsEntite[index][11], validationsEntite[index][12]]
                 }
-            if len(realisesSousEntitesList) != 0:
-                for sousEntite in realisesSousEntitesList:
-                    kDoc[f"sousEntite{realisesSousEntitesList.index(sousEntite)}"] = realisesSousEntitesList[realisesSousEntitesList.index(sousEntite)][i]
+            if len(sousEntitesStringList) != 0:
+                for sousEntite in sousEntitesStringList:
+                    kDoc[f"sousEntite{sousEntitesStringList.index(sousEntite)}"] = realisesSousEntitesList[sousEntitesStringList.index(sousEntite)][i]
+                    kDoc["allValidationsList"].append(validationSousEntites[sousEntitesStringList.index(sousEntite)][i])
             kList.append(kDoc)
         return kList
 
@@ -524,14 +530,22 @@ class EntiteExportAllData(Resource):
 
         return data["valeurs"]
 
+    def getValidationEntite(self, idEntite, annee):
+        id = f"{idEntite}_{annee}"
+        response = supabase.table('DataIndicateur').select("*").eq("id", id).execute().data
+        data = response[0]
+
+        return data["validations"]
+
     def post(self):
         args = request.get_json()
         try :
 
             annee = args["annee"]
             entiteId = args["entiteId"]
-            sousEntites = []
+            sousEntites = args["sousEntites"]
             dataValeursListSousEntites = []
+            dataValidationSousEntites = []
 
             ###################################
 
@@ -544,15 +558,22 @@ class EntiteExportAllData(Resource):
 
             dataValeurList = self.getDataEntite(entiteId, annee)
 
+            dataValidationList = self.getValidationEntite(entiteId, annee)
+
             dataRealise = self.getRealise(dataValeurList)
+
+            dataValidationRealise = self.getRealise(dataValidationList)
 
             #################################
             
             if len(sousEntites) != 0:
                 for entity in sousEntites:
                     datasSousEntite = self.getDataEntite(entity, annee)
+                    validationSousEntite = self.getValidationEntite(entity, annee)
                     realiseSousEntite = self.getRealise(datasSousEntite)
+                    realiseValidationSousEntite = self.getRealise(validationSousEntite)
                     dataValeursListSousEntites.append(realiseSousEntite)
+                    dataValidationSousEntites.append(realiseValidationSousEntite)
 
 
             #################################
@@ -562,7 +583,7 @@ class EntiteExportAllData(Resource):
 
             ## Général
 
-            allRows = self.getJson(1,288,dataEntite,dataRealise, dataValeurList, dataValeursListSousEntites)
+            allRows = self.getJson(1,288,dataEntite,dataRealise, dataValidationRealise, dataValeurList, dataValidationList, dataValeursListSousEntites, dataValidationSousEntites, sousEntites)
 
             return {
                 "entreprise": "Groupe SIFCA",
@@ -584,9 +605,10 @@ class EntiteExportENAllData(Resource):
             result.append(data[0])
         return result
 
-    def getJson(self,start,end,dataEntite,dataRealise, dataEntiteList, realisesSousEntitesList):
+    def getJson(self,start,end,dataEntite, dataRealise, realiseValidationEntite,  dataEntiteList, validationsEntite, realisesSousEntitesList, validationSousEntites, sousEntitesStringList):
         kList = []
         for i in range(start - 1, end - 1):
+            index = dataEntite[i]["numero"] - 1
             kDoc = {
                     "numero": dataEntite[i]["numero"],
                     "reference": dataEntite[i]["reference"],
@@ -594,23 +616,25 @@ class EntiteExportENAllData(Resource):
                     "processus": dataEntite[i]["processus"],
                     "unite": dataEntite[i]["unite"],
                     "type": dataEntite[i]["type"],
-                    "realise": dataRealise[dataEntite[i]["numero"] -1],
-                    "dataJan": dataEntiteList[dataEntite[i]["numero"] - 1][1],
-                    "dataFeb": dataEntiteList[dataEntite[i]["numero"] - 1][2],
-                    "dataMar": dataEntiteList[dataEntite[i]["numero"] - 1][3],
-                    "dataApr": dataEntiteList[dataEntite[i]["numero"] - 1][4],
-                    "dataMay": dataEntiteList[dataEntite[i]["numero"] - 1][5],
-                    "dataJun": dataEntiteList[dataEntite[i]["numero"] - 1][6],
-                    "dataJul": dataEntiteList[dataEntite[i]["numero"] - 1][7],
-                    "dataAug": dataEntiteList[dataEntite[i]["numero"] - 1][8],
-                    "dataSep": dataEntiteList[dataEntite[i]["numero"] - 1][9],
-                    "dataOct": dataEntiteList[dataEntite[i]["numero"] - 1][10],
-                    "dataNov": dataEntiteList[dataEntite[i]["numero"] - 1][11],
-                    "dataDec": dataEntiteList[dataEntite[i]["numero"] - 1][12],
+                    "realise": dataRealise[index],
+                    "dataJan": dataEntiteList[index][1],
+                    "dataFeb": dataEntiteList[index][2],
+                    "dataMar": dataEntiteList[index][3],
+                    "dataApr": dataEntiteList[index][4],
+                    "dataMay": dataEntiteList[index][5],
+                    "dataJun": dataEntiteList[index][6],
+                    "dataJul": dataEntiteList[index][7],
+                    "dataAug": dataEntiteList[index][8],
+                    "dataSep": dataEntiteList[index][9],
+                    "dataOct": dataEntiteList[index][10],
+                    "dataNov": dataEntiteList[index][11],
+                    "dataDec": dataEntiteList[index][12],
+                    "allValidationsList": [realiseValidationEntite[index], validationsEntite[index][1], validationsEntite[index][2], validationsEntite[index][3], validationsEntite[index][4], validationsEntite[index][5], validationsEntite[index][6], validationsEntite[index][7], validationsEntite[index][8], validationsEntite[index][9], validationsEntite[index][10], validationsEntite[index][11], validationsEntite[index][12]]
                 }
-            if len(realisesSousEntitesList) != 0:
-                for sousEntite in realisesSousEntitesList:
-                    kDoc[f"sousEntite{realisesSousEntitesList.index(sousEntite)}"] = realisesSousEntitesList[realisesSousEntitesList.index(sousEntite)][i]
+            if len(sousEntitesStringList) != 0:
+                for sousEntite in sousEntitesStringList:
+                    kDoc[f"sousEntite{sousEntitesStringList.index(sousEntite)}"] = realisesSousEntitesList[sousEntitesStringList.index(sousEntite)][i]
+                    kDoc["allValidationsList"].append(validationSousEntites[sousEntitesStringList.index(sousEntite)][i])
             kList.append(kDoc)
         return kList
 
@@ -621,14 +645,22 @@ class EntiteExportENAllData(Resource):
 
         return data["valeurs"]
 
+    def getValidationEntite(self, idEntite, annee):
+        id = f"{idEntite}_{annee}"
+        response = supabase.table('DataIndicateur').select("*").eq("id", id).execute().data
+        data = response[0]
+
+        return data["validations"]
+
     def post(self):
         args = request.get_json()
         try :
 
             annee = args["annee"]
             entiteId = args["entiteId"]
-            sousEntites = []
+            sousEntites = args["sousEntites"]
             dataValeursListSousEntites = []
+            dataValidationSousEntites = []
 
             ###################################
 
@@ -641,15 +673,22 @@ class EntiteExportENAllData(Resource):
 
             dataValeurList = self.getDataEntite(entiteId, annee)
 
+            dataValidationList = self.getValidationEntite(entiteId, annee)
+
             dataRealise = self.getRealise(dataValeurList)
+
+            dataValidationRealise = self.getRealise(dataValidationList)
 
             #################################
             
             if len(sousEntites) != 0:
                 for entity in sousEntites:
                     datasSousEntite = self.getDataEntite(entity, annee)
+                    validationSousEntite = self.getValidationEntite(entity, annee)
                     realiseSousEntite = self.getRealise(datasSousEntite)
+                    realiseValidationSousEntite = self.getRealise(validationSousEntite)
                     dataValeursListSousEntites.append(realiseSousEntite)
+                    dataValidationSousEntites.append(realiseValidationSousEntite)
 
 
             #################################
@@ -659,7 +698,7 @@ class EntiteExportENAllData(Resource):
 
             ## Général
 
-            allRows = self.getJson(1,288,dataEntite,dataRealise, dataValeurList, dataValeursListSousEntites)
+            allRows = self.getJson(1,288,dataEntite,dataRealise, dataValidationRealise, dataValeurList, dataValidationList, dataValeursListSousEntites, dataValidationSousEntites, sousEntites)
 
             return {
                 "entreprise": "SIFCA Group",
