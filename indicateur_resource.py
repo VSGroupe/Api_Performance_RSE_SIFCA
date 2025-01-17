@@ -3,7 +3,7 @@ from flask import request, make_response
 import copy
 from data import calculated_keys, test_indicators_keys
 from dbkeys import supabase
-from utils import formuleCalcules, formuleSomme, formuleDernierMois, formuleMoyenne, PerformGlobal, extraire_chiffres, indexes_by, testIndicatorsFormulas
+from utils import ecartCalculatedKeys, formuleCalcules, formuleSomme, formuleDernierMois, formuleMoyenne, PerformGlobal, extraire_chiffres, indexes_by, testIndicatorsFormulas
 from utils_data import readDataJson, saveDataInJson
 
 class GetDataEntiteIndicateur(Resource):
@@ -115,10 +115,27 @@ class UpdateDataEntiteIndicateur(Resource):
 
         # Formule Colonne ligne calculés
         for index in calculated_keys :
-
+            dataMapEcart = {}
             dataRow = formuleCalcules(index, dataValeurListN1, dataValeurListN2)
+            dataMapEcart = ecartCalculatedKeys(index, dataValeurListN1, dataValeurListN2, dataValeurListN3)
+            
+
+            if dataValeurListN1[index - 1][0] != None and dataValeurListN2[index - 1][0] != None:
+                listEcart[index - 1] = dataMapEcart["completedYear"]
+            else:
+                listEcart[index - 1] = None
+
+            print(f"2024: ${dataValeurListN1[index - 1][0]}")
+            print(f"2025: ${dataValeurListN3[index - 1][0]}")
+
+            if dataValeurListN1[index - 1][0] != None and dataValeurListN3[index - 1][0] != None:
+                listEcartNextYear[index - 1] = dataMapEcart["completedNextYear"]
+            else:
+                listEcartNextYear[index - 1] = None
+
             if dataRow != None:
                 dataValeurListN1[index - 1] = dataRow
+
         
         for index in test_indicators_keys:
             dataRow = testIndicatorsFormulas(index, dataValeurListN1, dataValeurListN2)
@@ -233,14 +250,12 @@ class DeleteDataEntiteIndicateur(Resource):
                 if all(x is None for x in listCalcul):
                     sommeList = None
                     listEcart[ligne] = None
+                    listEcartNextYear[ligne] = None
                 else:
                     sommeList = formuleSomme(listCalcul)
                     if realiseLastYear != None:
                         dataEcart = ((realiseLastYear - sommeList) / realiseLastYear) * 100
                         listEcart[ligne] = dataEcart
-                    if realiseNextYear != None:
-                        dataEcart = None
-                        listEcartNextYear[ligne] = dataEcart
                 dataValeurListN1[ligne][0] = sommeList
 
             elif formule == "Dernier mois renseigné" :
@@ -249,14 +264,12 @@ class DeleteDataEntiteIndicateur(Resource):
                 if all(x is None for x in listCalcul):
                     dernierMoisList = None
                     listEcart[ligne] = None
+                    listEcartNextYear[ligne] = None
                 else:
                     dernierMoisList = formuleDernierMois(listCalcul)
                     if realiseLastYear != None:
                         dataEcart = ((realiseLastYear - dernierMoisList) / realiseLastYear) * 100
                         listEcart[ligne] = dataEcart
-                    if realiseNextYear != None:
-                        dataEcart = None
-                        listEcartNextYear[ligne] = dataEcart
                 dataValeurListN1[ligne][0] = dernierMoisList
 
             elif formule == "Moyenne" :
@@ -265,22 +278,32 @@ class DeleteDataEntiteIndicateur(Resource):
                 if all(x is None for x in listCalcul):
                     moyenneList = None
                     listEcart[ligne] = None
+                    listEcartNextYear[ligne] = None
                 else:
                     moyenneList = formuleMoyenne(listCalcul)
                     if realiseLastYear != None:
                         dataEcart = ((realiseLastYear - moyenneList) / realiseLastYear) * 100
                         listEcart[ligne] = dataEcart
-                    if realiseNextYear != None:
-                        dataEcart = None
-                        listEcartNextYear[ligne] = dataEcart
                 dataValeurListN1[ligne][0] = moyenneList
 
         # Formule Colonne ligne calculés
         for index in calculated_keys :
-
+            dataMapEcart = {}
             dataRow = formuleCalcules(index, dataValeurListN1, dataValeurListN2)
+            dataMapEcart = ecartCalculatedKeys(index, dataValeurListN1, realiseLastYear, realiseNextYear)
+
             if dataRow != None:
                 dataValeurListN1[index - 1] = dataRow
+
+            if dataValeurListN1[index - 1][0] != None and dataValeurListN2[index - 1][0] != None:
+                listEcart[index - 1] = dataMapEcart["completedYear"]
+            else:
+                listEcart[index - 1] = None
+
+            if dataValeurListN1[index - 1][0] != None and dataValeurListN3[index - 1][0] != None:
+                listEcartNextYear[index - 1] = dataMapEcart["completedNextYear"]
+            else:
+                listEcartNextYear[index - 1] = None
         
         for index in test_indicators_keys:
             dataRow = testIndicatorsFormulas(index, dataValeurListN1, dataValeurListN2)

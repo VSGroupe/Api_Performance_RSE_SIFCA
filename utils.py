@@ -1448,4 +1448,23 @@ def formuleCalcules(index, dataValeurList, dataValeurListPastYear):
     except:
         return None
 
+def ecartCalculatedKeys(index, dataValeurListYear, dataValeurListPastYear, dataValeurListNextYear):
+    result = {"completedYear": 0, "completedNextYear": 0}
+    
+    try:
+        completedYear = dataValeurListYear[index - 1][0]
+        completedNextYear = dataValeurListNextYear[index - 1][0]
+        completedPastYear = dataValeurListPastYear[index - 1][0]
 
+        if completedPastYear != None and completedYear != None:
+            dataEcartYear = ((completedPastYear - completedYear) / completedPastYear) * 100
+
+        if completedYear != None and completedNextYear != None:
+            dataEcartNextYear = ((completedYear - completedNextYear) / completedYear) * 100
+
+        result["completedYear"] = dataEcartYear
+        result["completedNextYear"] = dataEcartNextYear
+
+        return result
+    except:
+        return None

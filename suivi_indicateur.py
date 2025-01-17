@@ -23,6 +23,7 @@ class SuiviDataIndicateur(Resource):
                 "Ressources Humaines / Juridique": "Ressources Humaines / Juridique",
                 "Développement Durable": "Développement Durable",
                 "Gestion des Stocks / Logistique": "Gestion des Stocks / Logistique",
+                
                 "Agricultural": "Agricole",
                 "Sustainable development": "Développement Durable",
                 "Finance": "Finances",
