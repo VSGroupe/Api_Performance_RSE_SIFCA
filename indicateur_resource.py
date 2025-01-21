@@ -62,21 +62,23 @@ class UpdateDataEntiteIndicateur(Resource):
         realiseLastYear = dataValeurListN2[ligne][0]
         realiseNextYear = dataValeurListN3[ligne][0] #
 
+        dataValeurListN1_copy = copy.deepcopy(dataValeurListN1)
+
         if isValide == True :
             return  {"status":False,"message":"La donnée est déja validée"}
 
-        dataValeurListN1[ligne][colonne] = valeur
+        dataValeurListN1_copy[ligne][colonne] = valeur
 
         # Formule Colonne "Réalisé" ligne primaire
 
         if type == "Primaire" :
 
             if formule == "Somme" :
-                listTemp = copy.deepcopy(dataValeurListN1[ligne])
+                listTemp = copy.deepcopy(dataValeurListN1_copy[ligne])
                 listCalcul = listTemp[1:]
                 sommeList = formuleSomme(listCalcul)
                 if sommeList != None:
-                    dataValeurListN1[ligne][0] = sommeList
+                    dataValeurListN1_copy[ligne][0] = sommeList
                     if realiseLastYear != None:
                         dataEcart = ((realiseLastYear - sommeList) / realiseLastYear) * 100
                         listEcart[ligne] = dataEcart
@@ -86,11 +88,11 @@ class UpdateDataEntiteIndicateur(Resource):
                         listEcartNextYear[ligne] = dataEcart
 
             elif formule == "Dernier mois renseigné" :
-                listTemp = copy.deepcopy(dataValeurListN1[ligne])
+                listTemp = copy.deepcopy(dataValeurListN1_copy[ligne])
                 listCalcul = listTemp[1:]
                 dernierMoisList = formuleDernierMois(listCalcul)
                 if dernierMoisList != None:
-                    dataValeurListN1[ligne][0] = dernierMoisList
+                    dataValeurListN1_copy[ligne][0] = dernierMoisList
                     if realiseLastYear != None:
                         dataEcart = ((realiseLastYear - dernierMoisList) / realiseLastYear) * 100
                         listEcart[ligne] = dataEcart
@@ -100,11 +102,11 @@ class UpdateDataEntiteIndicateur(Resource):
                         listEcartNextYear[ligne] = dataEcart
 
             elif formule == "Moyenne" :
-                listTemp = copy.deepcopy(dataValeurListN1[ligne])
+                listTemp = copy.deepcopy(dataValeurListN1_copy[ligne])
                 listCalcul = listTemp[1:]
                 moyenneList = formuleMoyenne(listCalcul)
                 if moyenneList != None:
-                    dataValeurListN1[ligne][0] = moyenneList
+                    dataValeurListN1_copy[ligne][0] = moyenneList
                     if realiseLastYear != None:
                         dataEcart = ((realiseLastYear - moyenneList) / realiseLastYear) * 100
                         listEcart[ligne] = dataEcart
@@ -116,8 +118,8 @@ class UpdateDataEntiteIndicateur(Resource):
         # Formule Colonne ligne calculés
         for index in calculated_keys :
             dataMapEcart = {}
-            dataRow = formuleCalcules(index, dataValeurListN1, dataValeurListN2)
-            dataMapEcart = ecartCalculatedKeys(index, dataValeurListN1, dataValeurListN2, dataValeurListN3)
+            dataRow = formuleCalcules(index, dataValeurListN1_copy, dataValeurListN2)
+            dataMapEcart = ecartCalculatedKeys(index, dataValeurListN1_copy, dataValeurListN2, dataValeurListN3)
             
 
             if dataValeurListN1[index - 1][0] != None and dataValeurListN2[index - 1][0] != None:
@@ -125,22 +127,22 @@ class UpdateDataEntiteIndicateur(Resource):
             else:
                 listEcart[index - 1] = None
 
-            print(f"2024: ${dataValeurListN1[index - 1][0]}")
+            print(f"2024: ${dataValeurListN1_copy[index - 1][0]}")
             print(f"2025: ${dataValeurListN3[index - 1][0]}")
 
-            if dataValeurListN1[index - 1][0] != None and dataValeurListN3[index - 1][0] != None:
+            if dataValeurListN1_copy[index - 1][0] != None and dataValeurListN3[index - 1][0] != None:
                 listEcartNextYear[index - 1] = dataMapEcart["completedNextYear"]
             else:
                 listEcartNextYear[index - 1] = None
 
             if dataRow != None:
-                dataValeurListN1[index - 1] = dataRow
+                dataValeurListN1_copy[index - 1] = dataRow
 
         
         for index in test_indicators_keys:
-            dataRow = testIndicatorsFormulas(index, dataValeurListN1, dataValeurListN2)
+            dataRow = testIndicatorsFormulas(index, dataValeurListN1_copy, dataValeurListN2)
             if dataRow != None:
-                dataValeurListN1[index - 1] = dataRow
+                dataValeurListN1_copy[index - 1] = dataRow
 
         #Calcul de la performance Globale
         globalPerfData = PerformGlobal(listEcart)
@@ -187,8 +189,8 @@ class UpdateDataEntiteIndicateur(Resource):
         supabase.table('Performance').update({'performs_piliers': listAxesNextYear}).eq('id',idNextYear).execute()
         supabase.table('Performance').update({'performs_enjeux': listEnjeuxNextYear}).eq('id',idNextYear).execute()
 
-        saveDataInJson(dataValeurListN1,entite,f"{entite}_data_{annee}.json")
-        supabase.table('DataIndicateur').update({'valeurs': dataValeurListN1}).eq('id',id).execute()
+        saveDataInJson(dataValeurListN1_copy,entite,f"{entite}_data_{annee}.json")
+        supabase.table('DataIndicateur').update({'valeurs': dataValeurListN1_copy}).eq('id',id).execute()
         supabase.table('DataIndicateur').update({"ecarts" : listEcart}).eq('id',id).execute()
         supabase.table('DataIndicateur').update({"ecarts" : listEcartNextYear}).eq('id',idNextYear).execute()
 
