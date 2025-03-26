@@ -300,7 +300,7 @@ class DeleteDataEntiteIndicateur(Resource):
             else:
                 listEcart[index - 1] = None
 
-          if (dataValeurListN1[index - 1][0] is not None and  dataValeurListN3[index - 1][0] is not None and  dataMapEcart is not None):
+            if (dataValeurListN1[index - 1][0] is not None and  dataValeurListN3[index - 1][0] is not None and  dataMapEcart is not None):
                 listEcartNextYear[index - 1] = dataMapEcart["completedNextYear"]
             else:
                 listEcartNextYear[index - 1] = None
