@@ -1,3 +1,4 @@
+
 from flask_restful import Resource
 from flask import request, make_response
 import copy
@@ -293,16 +294,17 @@ class DeleteDataEntiteIndicateur(Resource):
 
             if dataRow != None:
                 dataValeurListN1[index - 1] = dataRow
-if (dataValeurListN1[index - 1][0] is not None and 
-    dataValeurListN2[index - 1][0] is not None and
-    dataMapEcart is not None):
-    listEcart[index - 1] = dataMapEcart["completedYear"]
-else:
-    listEcart[index - 1] = None
-          if dataValeurListN1[index - 1][0] != None and dataValeurListN3[index - 1][0] != None:
+
+            if (dataValeurListN1[index - 1][0] is not None and dataValeurListN2[index - 1][0] is not None and dataMapEcart is not None):
+                 listEcart[index - 1] = dataMapEcart["completedYear"]
+            else:
+                listEcart[index - 1] = None
+
+          if (dataValeurListN1[index - 1][0] is not None and  dataValeurListN3[index - 1][0] is not None and  dataMapEcart is not None):
                 listEcartNextYear[index - 1] = dataMapEcart["completedNextYear"]
             else:
                 listEcartNextYear[index - 1] = None
+        
         for index in test_indicators_keys:
             dataRow = testIndicatorsFormulas(index, dataValeurListN1, dataValeurListN2)
             if dataRow != None:
