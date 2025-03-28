@@ -193,7 +193,7 @@ class UpdateDataEntiteIndicateur(Resource):
             return {"status": True}
         except Exception as e:
             return {"status": False, "message": f"Une erreur inattendue s'est produite: {str(e)}"}, 500
-DeleteDataEntiteIndicateur(Resource):
+class DeleteDataEntiteIndicateur(Resource):
     # Mise à jour des données indicateurs
     def post(self):
         args = request.get_json()
