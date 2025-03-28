@@ -355,12 +355,14 @@ class DeleteDataEntiteIndicateur(Resource):
         supabase.table('Performance').update({'performs_enjeux': listEnjeuxNextYear}).eq('id',idNextYear).execute()
 
         saveDataInJson(dataValeurListN1,entite,f"{entite}_data_{annee}.json")
-        supabase.table('DataIndicateur').update({ 'valeurs': supabase.func.jsonb_set('valeurs', f'{{{ligne},{colonne}}}', 'null', True)}).eq('id', id).execute()
-        if listEcart[ligne] is not None:
-            supabase.table('DataIndicateur').update({'ecarts': supabase.func.jsonb_set('ecarts', f'{{{ligne}}}', 'null', True) }).eq('id', id).execute()
-        if listEcartNextYear[ligne] is not None:
-            supabase.table('DataIndicateur').update({ 'ecarts': supabase.func.jsonb_set('ecarts', f'{{{ligne}}}', 'null', True)}).eq('id', idNextYear).execute()
+        saveDataInJson(dataValcurListN1, entite, f"{entite},data_(amnce).json")
+        supabase.table('DataIndicateur').update({'valeurs': supabase.rpc('jsonb_set', {'target': 'valeurs', 'path': [ligne, colonne], 'value': None, 'create_missing': True})}).eq('id', id).execute()
+        if listEcart[ligne] is not None: 
+            supabase.table('DataIndicateur').update({'ecarts': supabase.rpc('jsonb_set', {'target': 'ecarts', 'path': [ligne], 'value': None, 'create_missing': True})}).eq('id', id).execute()
+        if listEcartNextYear[ligne] is not None: 
+            supabase.table('DataIndicateur').update({'ecarts': supabase.rpc('jsonb_set', {'target': 'ecarts', 'path': [ligne], 'value': None, 'create_missing': True})}).eq('id', idNextYear).execute()
         return {"status": True, "message": "Donnée supprimée avec succès"}
+
 
 
 # # class ComputePerformsEntite(Resource):
