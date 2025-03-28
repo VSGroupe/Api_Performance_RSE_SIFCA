@@ -520,25 +520,47 @@ class UpdateDataEntiteIndicateurFromSupabase(Resource):
         return {"status":True}
 
 class UpdateValidationEntiteIndicateur(Resource):
-    # Mise à jour des données indicateurs
     def post(self):
-        args = request.get_json()
+        try:
+            args = request.get_json()
+            annee = args["annee"]
+            entite = args["entite"]
+            colonne = args["colonne"]
+            ligne = args["ligne"]
+            valide = args["valide"]
 
-        annee = args["annee"]
-        entite = args["entite"]
-        colonne = args["colonne"]
-        ligne = args["ligne"]
-        valide = args["valide"]
+            id = f"{entite}_{annee}"
 
-        id = f"{entite}_{annee}"
+            # 1. Récupérer les données actuelles de Supabase
+            current_data = supabase.table('DataIndicateur').select("*").eq("id", id).execute().data
+            if not current_data:
+                return {"status": False, "message": "Données non trouvées"}, 404
+                
+            current_validations = current_data[0]['validations']
 
+            # 2. Vérifier que la valeur actuelle est différente avant mise à jour
+            if current_validations[ligne][colonne] == valide:
+                return {"status": True, "message": "Aucun changement nécessaire"}
 
-        dataValidationsList = readDataJson(entite,f"{entite}_validation_{annee}.json")
-        dataValidationsList[ligne][colonne] = valide
-        saveDataInJson(dataValidationsList,entite,f"{entite}_validation_{annee}.json")
-        supabase.table('DataIndicateur').update({'validations': dataValidationsList}).eq('id', id).execute()
+            # 3. Mettre à jour uniquement le champ spécifique
+            current_validations[ligne][colonne] = valide
 
-        return {"status":True}
+            # 4. Mettre à jour Supabase en premier
+            update_response = supabase.table('DataIndicateur').update(
+                {'validations': current_validations}
+            ).eq('id', id).execute()
+
+            # 5. Vérifier que la mise à jour Supabase a réussi
+            if not update_response.data:
+                return {"status": False, "message": "Échec de la mise à jour Supabase"}, 500
+
+            # 6. Mettre à jour le fichier JSON local
+            saveDataInJson(current_validations, entite, f"{entite}_validation_{annee}.json")
+
+            return {"status": True}
+
+        except Exception as e:
+            return {"status": False, "message": f"Erreur: {str(e)}"}, 500
 
 
 
