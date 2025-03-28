@@ -202,6 +202,7 @@ class DeleteDataEntiteIndicateur(Resource):
         entite = args["entite"]
         colonne = args["colonne"]
         ligne = args["ligne"]
+        valeur = args["valeur"]
         type = args["type"]
         formule = args["formule"]
 
