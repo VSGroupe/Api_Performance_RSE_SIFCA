@@ -199,192 +199,151 @@ class DeleteDataEntiteIndicateur(Resource):
             args = request.get_json()
 
             # Validate required fields
-            required_fields = ["annee", "entite", "colonne", "ligne", "type", "formule"]
+            required_fields = ["annee", "entite", "colonne", "ligne"]
             for field in required_fields:
                 if field not in args:
-                    return {"status": False, "message": f"Missing required field: {field}"}, 400
+                    return {"status": False, "message": f"Champ requis manquant: {field}"}, 400
 
             annee = args["annee"]
             entite = args["entite"]
             colonne = args["colonne"]
             ligne = args["ligne"]
-            type = args["type"]
-            formule = args["formule"]
-            valeur = args.get("valeur")  # Make valeur optional
+            type = args.get("type", "Primaire")  # Optional with default
+            formule = args.get("formule")  # Optional
 
             id = f"{entite}_{annee}"
             idNextYear = f"{entite}_{annee + 1}"
 
-            # Get data from Supabase
+            # Get current data
             try:
-                responseListEcart = supabase.table('DataIndicateur').select("ecarts").eq("id", id).execute().data
-                responseListEcartNextYear = supabase.table('DataIndicateur').select("ecarts").eq("id", idNextYear).execute().data
-                responseListAxesEnjeu = supabase.table('Indicateurs').select("axe, enjeu").order("numero", desc=False).execute().data
+                data_response = supabase.table('DataIndicateur').select("valeurs, ecarts, validations").eq("id", id).execute()
+                data_next_year = supabase.table('DataIndicateur').select("ecarts").eq("id", idNextYear).execute()
+                indicateurs_info = supabase.table('Indicateurs').select("axe, enjeu").order("numero", desc=False).execute()
             except Exception as e:
-                return {"status": False, "message": f"Erreur lors de l'acces Supabase: {str(e)}"}, 500
+                return {"status": False, "message": f"Erreur Supabase: {str(e)}"}, 500
 
-            # Extract ecarts lists
-            listEcart = responseListEcart[0]['ecarts']
-            listEcartNextYear = responseListEcartNextYear[0]['ecarts']
-
-            # Read data from JSON files
-            try:
-                dataValeurListN1 = readDataJson(entite, f"{entite}_data_{annee}.json")
-                dataValeurListN2 = readDataJson(entite, f"{entite}_data_{annee - 1}.json")
-                dataValeurListN3 = readDataJson(entite, f"{entite}_data_{annee + 1}.json")
-                dataValidationList = readDataJson(entite, f"{entite}_validation_{annee}.json")
-            except Exception as e:
-                return {"status": False, "message": f"Erreur lecture fichiers JSON: {str(e)}"}, 500
+            # Extract data
+            current_data = data_response.data[0]
+            data_values = current_data['valeurs']
+            data_ecarts = current_data['ecarts']
+            data_validations = current_data['validations']
+            data_ecarts_next_year = data_next_year.data[0]['ecarts']
 
             # Check if data is already validated
-            isValide = dataValidationList[ligne][colonne]
-            if isValide:
-                return {"status": False, "message": "La donnée est déjà validée"}
+            if data_validations[ligne][colonne]:
+                return {"status": False, "message": "La donnée est déjà validée"}, 400
 
             # Create a copy of the data to modify
-            dataValeurListN1_copy = copy.deepcopy(dataValeurListN1)
+            data_values_copy = copy.deepcopy(data_values)
             
-            # For delete operation, set the value to None instead of using the provided value
-            dataValeurListN1_copy[ligne][colonne] = None
+            # Delete only the specified value (set to None)
+            data_values_copy[ligne][colonne] = None
 
-            # Get reference values
-            realiseLastYear = dataValeurListN2[ligne][0]
-            realiseNextYear = dataValeurListN3[ligne][0]
+            # Get reference values from previous and next year
+            try:
+                data_last_year = readDataJson(entite, f"{entite}_data_{annee - 1}.json")
+                data_next_year = readDataJson(entite, f"{entite}_data_{annee + 1}.json")
+            except Exception as e:
+                return {"status": False, "message": f"Erreur lecture données historiques: {str(e)}"}, 500
 
-            # Handle primary indicators
-            if type == "Primaire":
+            realise_last_year = data_last_year[ligne][0] if data_last_year else None
+            realise_next_year = data_next_year[ligne][0] if data_next_year else None
+
+            # Recalculate values based on type and formula
+            if type == "Primaire" and formule:
                 if formule == "Somme":
-                    listTemp = copy.deepcopy(dataValeurListN1_copy[ligne])
-                    listCalcul = listTemp[1:]
-                    sommeList = formuleSomme(listCalcul)
-                    if sommeList is not None:
-                        dataValeurListN1_copy[ligne][0] = sommeList
-                        if realiseLastYear is not None and realiseLastYear != 0:
-                            dataEcart = ((realiseLastYear - sommeList) / realiseLastYear) * 100
-                            listEcart[ligne] = dataEcart
-                    else:
-                        listEcart[ligne] = None
-                        listEcartNextYear[ligne] = None
-
+                    list_temp = data_values_copy[ligne][1:]  # Exclude realized value
+                    new_value = formuleSomme(list_temp)
+                    data_values_copy[ligne][0] = new_value
+                    
                 elif formule == "Dernier mois renseigné":
-                    listTemp = copy.deepcopy(dataValeurListN1_copy[ligne])
-                    listCalcul = listTemp[1:]
-                    dernierMoisList = formuleDernierMois(listCalcul)
-                    if dernierMoisList is not None:
-                        dataValeurListN1_copy[ligne][0] = dernierMoisList
-                        if realiseLastYear is not None and realiseLastYear != 0:
-                            dataEcart = ((realiseLastYear - dernierMoisList) / realiseLastYear) * 100
-                            listEcart[ligne] = dataEcart
-                    else:
-                        listEcart[ligne] = None
-                        listEcartNextYear[ligne] = None
-
+                    list_temp = data_values_copy[ligne][1:]
+                    new_value = formuleDernierMois(list_temp)
+                    data_values_copy[ligne][0] = new_value
+                    
                 elif formule == "Moyenne":
-                    listTemp = copy.deepcopy(dataValeurListN1_copy[ligne])
-                    listCalcul = listTemp[1:]
-                    moyenneList = formuleMoyenne(listCalcul)
-                    if moyenneList is not None:
-                        dataValeurListN1_copy[ligne][0] = moyenneList
-                        if realiseLastYear is not None and realiseLastYear != 0:
-                            dataEcart = ((realiseLastYear - moyenneList) / realiseLastYear) * 100
-                            listEcart[ligne] = dataEcart
-                    else:
-                        listEcart[ligne] = None
-                        listEcartNextYear[ligne] = None
+                    list_temp = data_values_copy[ligne][1:]
+                    new_value = formuleMoyenne(list_temp)
+                    data_values_copy[ligne][0] = new_value
 
-            # Handle calculated indicators
+                # Recalculate ecart if we have a new value and reference
+                if data_values_copy[ligne][0] is not None and realise_last_year is not None and realise_last_year != 0:
+                    data_ecarts[ligne] = ((realise_last_year - data_values_copy[ligne][0]) / realise_last_year) * 100
+                else:
+                    data_ecarts[ligne] = None
+
+            # Recalculate calculated indicators
             for index in calculated_keys:
-                dataMapEcart = ecartCalculatedKeys(index, dataValeurListN1_copy, dataValeurListN2, dataValeurListN3)
-                dataRow = formuleCalcules(index, dataValeurListN1_copy, dataValeurListN2)
+                new_row = formuleCalcules(index, data_values_copy, data_last_year)
+                if new_row is not None:
+                    data_values_copy[index - 1] = new_row
+                
+                ecart_data = ecartCalculatedKeys(index, data_values_copy, realise_last_year, realise_next_year)
+                if ecart_data:
+                    data_ecarts[index - 1] = ecart_data.get("completedYear")
+                    data_ecarts_next_year[index - 1] = ecart_data.get("completedNextYear")
 
-                if dataMapEcart is not None:
-                    if dataValeurListN1_copy[index - 1][0] is not None and dataValeurListN2[index - 1][0] is not None:
-                        listEcart[index - 1] = dataMapEcart.get("completedYear")
-                    else:
-                        listEcart[index - 1] = None
-
-                    if dataValeurListN1_copy[index - 1][0] is not None and dataValeurListN3[index - 1][0] is not None:
-                        listEcartNextYear[index - 1] = dataMapEcart.get("completedNextYear")
-                    else:
-                        listEcartNextYear[index - 1] = None
-
-                if dataRow is not None:
-                    dataValeurListN1_copy[index - 1] = dataRow
-
-            # Handle test indicators
+            # Recalculate test indicators
             for index in test_indicators_keys:
-                dataRow = testIndicatorsFormulas(index, dataValeurListN1_copy, dataValeurListN2)
-                if dataRow is not None:
-                    dataValeurListN1_copy[index - 1] = dataRow
+                new_row = testIndicatorsFormulas(index, data_values_copy, data_last_year)
+                if new_row is not None:
+                    data_values_copy[index - 1] = new_row
 
             # Calculate global performance
-            globalPerfData = PerformGlobal(listEcart)
-            globalPerfDataNextYear = PerformGlobal(listEcartNextYear)
+            global_perf = PerformGlobal(data_ecarts)
+            global_perf_next_year = PerformGlobal(data_ecarts_next_year)
 
-            # Extract and calculate axes and enjeux performance
-            def extract_data(response_list, list_ecart, value):
-                result_list = []
-                list_index = indexes_by(response_list, value=value)
-                for index_list in list_index:
-                    temp_list = []
-                    for index in index_list:
-                        temp_list.append(list_ecart[index])
-                    result_list.append(temp_list)
-                for index, item in enumerate(result_list):
-                    l = [x for x in item if x is not None]
-                    if l:
-                        result_list[index] = sum(l) / len(l)
-                    else:
-                        result_list[index] = None
-                return result_list
+            # Calculate axes and enjeux performance
+            def calculate_performance(response_list, ecart_list, field):
+                result = []
+                indices = indexes_by(response_list, value=field)
+                for group in indices:
+                    values = [ecart_list[i] for i in group if ecart_list[i] is not None]
+                    avg = sum(values) / len(values) if values else None
+                    result.append(avg)
+                return [100 if x is None else x for x in result[1:]]  # Skip first item
 
-            resultlistAxes = extract_data(responseListAxesEnjeu, listEcart, "axe")
-            listAxes = [100 if x is None else x for x in resultlistAxes[1:]]
-            resultlistEnjeux = extract_data(responseListAxesEnjeu, listEcart, "enjeu")
-            listEnjeux = [100 if x is None else x for x in resultlistEnjeux[1:]]
+            axes_perf = calculate_performance(indicateurs_info.data, data_ecarts, "axe")
+            enjeux_perf = calculate_performance(indicateurs_info.data, data_ecarts, "enjeu")
+            axes_perf_next = calculate_performance(indicateurs_info.data, data_ecarts_next_year, "axe")
+            enjeux_perf_next = calculate_performance(indicateurs_info.data, data_ecarts_next_year, "enjeu")
 
-            resultlistAxesNextYear = extract_data(responseListAxesEnjeu, listEcartNextYear, "axe")
-            listAxesNextYear = [100 if x is None else x for x in resultlistAxesNextYear[1:]]
-            resultlistEnjeuxNextYear = extract_data(responseListAxesEnjeu, listEcartNextYear, "enjeu")
-            listEnjeuxNextYear = [100 if x is None else x for x in resultlistEnjeuxNextYear[1:]]
-
-            # Update Supabase
+            # Update database
             try:
-                # Update Performance table
+                # Update current year
                 supabase.table('Performance').update({
-                    'performs_piliers': listAxes,
-                    'performs_enjeux': listEnjeux,
-                    'performs_global': globalPerfData
+                    'performs_piliers': axes_perf,
+                    'performs_enjeux': enjeux_perf,
+                    'performs_global': global_perf
                 }).eq('id', id).execute()
 
+                # Update next year
                 supabase.table('Performance').update({
-                    'performs_piliers': listAxesNextYear,
-                    'performs_enjeux': listEnjeuxNextYear,
-                    'performs_global': globalPerfDataNextYear
+                    'performs_piliers': axes_perf_next,
+                    'performs_enjeux': enjeux_perf_next,
+                    'performs_global': global_perf_next_year
                 }).eq('id', idNextYear).execute()
 
-                # Update DataIndicateur table
+                # Update DataIndicateur
                 supabase.table('DataIndicateur').update({
-                    'valeurs': dataValeurListN1_copy,
-                    'ecarts': listEcart
+                    'valeurs': data_values_copy,
+                    'ecarts': data_ecarts
                 }).eq('id', id).execute()
 
                 supabase.table('DataIndicateur').update({
-                    'ecarts': listEcartNextYear
+                    'ecarts': data_ecarts_next_year
                 }).eq('id', idNextYear).execute()
 
                 # Save to JSON
-                saveDataInJson(dataValeurListN1_copy, entite, f"{entite}_data_{annee}.json")
+                saveDataInJson(data_values_copy, entite, f"{entite}_data_{annee}.json")
 
             except Exception as e:
                 return {"status": False, "message": f"Erreur mise à jour Supabase: {str(e)}"}, 500
 
-            return {"status": True}
+            return {"status": True, "message": "Donnée supprimée avec succès"}
 
         except Exception as e:
             return {"status": False, "message": f"Erreur inattendue: {str(e)}"}, 500
-
-
 # # class ComputePerformsEntite(Resource):
 #     def post(self):
 #         args = request.get_json()
