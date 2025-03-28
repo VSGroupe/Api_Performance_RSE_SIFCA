@@ -233,11 +233,11 @@ class DeleteDataEntiteIndicateur(Resource):
         isValide = dataValidationList[ligne][colonne]
         realiseLastYear = dataValeurListN2[ligne][0]
         realiseNextYear = dataValeurListN3[ligne][0]
-
+        dataValeurListN1_copy = copy.deepcopy(dataValeurListN1)
         if isValide == True :
             return  {"status":False,"message":"La donnée est déja validée"}
 
-        dataValeurListN1[ligne][colonne] = None
+        dataValeurListN1_copy[ligne][colonne] = valeur
 
         # Formule Colonne "Réalisé" ligne primaire
 
