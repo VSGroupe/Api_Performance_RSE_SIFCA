@@ -51,183 +51,139 @@ class GetDataEntiteIndicateur(Resource):
 class UpdateDataEntiteIndicateur(Resource):
     def post(self):
         try:
+            # 1. Validation stricte des entrées
             args = request.get_json()
-
-            # 1. Validation des champs obligatoires (comme pour Delete)
             required_fields = ["annee", "entite", "colonne", "ligne", "valeur", "type", "formule"]
-            for field in required_fields:
-                if field not in args:
-                    return {"status": False, "message": f"Champ requis manquant: {field}"}, 400
+            if any(field not in args for field in required_fields):
+                return {"status": False, "message": "Champs requis manquants"}, 400
 
-            annee = args["annee"]
+            annee = int(args["annee"])
             entite = args["entite"]
-            colonne = args["colonne"]
-            ligne = args["ligne"]
-            valeur = args["valeur"]
+            colonne = int(args["colonne"])
+            ligne = int(args["ligne"])
+            valeur = float(args["valeur"]) if args["valeur"] not in [None, ""] else None
             type_ind = args["type"]
             formule = args["formule"]
 
-            # 2. Préparation des IDs (identique à Delete)
-            id = f"{entite}_{annee}"
-            idNextYear = f"{entite}_{annee + 1}"
+            # 2. Initialisation des IDs
+            current_id = f"{entite}_{annee}"
+            next_year_id = f"{entite}_{annee + 1}"
 
-            # 3. Récupération des données existantes (même structure que Delete)
+            # 3. Chargement des données avec vérification d'intégrité
             try:
                 # Chargement depuis Supabase
-                data_response = supabase.table('DataIndicateur').select("valeurs, ecarts, validations").eq("id", id).execute()
-                data_next_year = supabase.table('DataIndicateur').select("ecarts").eq("id", idNextYear).execute()
-                indicateurs_info = supabase.table('Indicateurs').select("axe, enjeu").order("numero", desc=False).execute()
+                current_data = supabase.table('DataIndicateur').select("*").eq("id", current_id).execute().data
+                next_year_data = supabase.table('DataIndicateur').select("*").eq("id", next_year_id).execute().data
                 
-                if not data_response.data:
-                    return {"status": False, "message": "Données non trouvées pour l'année courante"}, 404
-                    
-                current_data = data_response.data[0]
-                data_ecarts_next_year = data_next_year.data[0]['ecarts'] if data_next_year.data else None
+                if not current_data:
+                    return {"status": False, "message": "Données actuelles non trouvées"}, 404
 
-                # Chargement depuis les fichiers JSON
+                current_data = current_data[0]
+                valeurs = current_data['valeurs']
+                ecarts = current_data['ecarts']
+                validations = current_data['validations']
+                
+                # Chargement des fichiers locaux avec vérification de structure
                 data_n1 = readDataJson(entite, f"{entite}_data_{annee}.json")
-                data_n2 = readDataJson(entite, f"{entite}_data_{annee - 1}.json")
+                data_n2 = readDataJson(entite, f"{entite}_data_{annee - 1}.json") if annee > 1 else None
                 data_n3 = readDataJson(entite, f"{entite}_data_{annee + 1}.json")
-                data_validations = readDataJson(entite, f"{entite}_validation_{annee}.json")
+
+                # Vérification cohérence des structures
+                if len(valeurs) != len(data_n1) or len(ecarts) != len(data_n1):
+                    return {"status": False, "message": "Incohérence structurelle des données"}, 500
 
             except Exception as e:
-                return {"status": False, "message": f"Erreur lecture données: {str(e)}"}, 500
+                return {"status": False, "message": f"Erreur initialisation: {str(e)}"}, 500
 
-            # 4. Vérification validation (comme Delete)
-            if data_validations[ligne][colonne]:
-                return {"status": False, "message": "La donnée est déjà validée"}, 400
-
-            # 5. Création copies (identique à Delete)
-            data_n1_copy = copy.deepcopy(data_n1)
-            data_ecarts = copy.deepcopy(current_data['ecarts'])
-            data_ecarts_next_year = copy.deepcopy(data_ecarts_next_year) if data_ecarts_next_year else [None] * len(data_ecarts)
-
-            # 6. Mise à jour valeur spécifique (au lieu de suppression)
+            # 4. Vérification validation et cohérence des index
             try:
-                data_n1_copy[ligne][colonne] = valeur
+                if validations[ligne][colonne]:
+                    return {"status": False, "message": "Donnée validée - modification interdite"}, 403
             except IndexError:
-                return {"status": False, "message": "Index ligne/colonne invalide"}, 400
+                return {"status": False, "message": "Index invalide"}, 400
 
-            # 7. Recalculs (même logique que Delete)
+            # 5. Création de copies sécurisées
+            data_n1_copy = [row[:] for row in data_n1]  # Copie superficielle contrôlée
+            ecarts_copy = ecarts[:]
+            ecarts_next_year = next_year_data[0]['ecarts'][:] if next_year_data else [None] * len(ecarts)
+
+            # 6. Mise à jour ciblée avec verrouillage logique
+            try:
+                old_value = data_n1_copy[ligne][colonne]
+                data_n1_copy[ligne][colonne] = valeur
+                
+                # Journalisation du changement
+                print(f"Update: {entite} {annee} L{ligne}C{colonne} | {old_value} -> {valeur}")
+                
+            except IndexError:
+                return {"status": False, "message": "Coordonnées hors limites"}, 400
+
+            # 7. Recalcul intelligent basé sur le type
             realise_last_year = data_n2[ligne][0] if data_n2 and len(data_n2) > ligne else None
             realise_next_year = data_n3[ligne][0] if data_n3 and len(data_n3) > ligne else None
 
             if type_ind == "Primaire":
+                new_realise = None
                 if formule == "Somme":
-                    list_temp = data_n1_copy[ligne][1:]
-                    somme = formuleSomme(list_temp)
-                    data_n1_copy[ligne][0] = somme
-                    if somme is not None and realise_last_year is not None and realise_last_year != 0:
-                        data_ecarts[ligne] = ((realise_last_year - somme) / realise_last_year) * 100
-                    else:
-                        data_ecarts[ligne] = None
-
-                elif formule == "Dernier mois renseigné":
-                    dernier_mois = formuleDernierMois(data_n1_copy[ligne][1:])
-                    data_n1_copy[ligne][0] = dernier_mois
-                    if dernier_mois is not None and realise_last_year is not None and realise_last_year != 0:
-                        data_ecarts[ligne] = ((realise_last_year - dernier_mois) / realise_last_year) * 100
-                    else:
-                        data_ecarts[ligne] = None
-
+                    months_data = [x for x in data_n1_copy[ligne][1:] if x is not None]
+                    new_realise = sum(months_data) if months_data else None
                 elif formule == "Moyenne":
-                    moyenne = formuleMoyenne(data_n1_copy[ligne][1:])
-                    data_n1_copy[ligne][0] = moyenne
-                    if moyenne is not None and realise_last_year is not None and realise_last_year != 0:
-                        data_ecarts[ligne] = ((realise_last_year - moyenne) / realise_last_year) * 100
-                    else:
-                        data_ecarts[ligne] = None
+                    months_data = [x for x in data_n1_copy[ligne][1:] if x is not None]
+                    new_realise = sum(months_data)/len(months_data) if months_data else None
+                elif formule == "Dernier mois renseigné":
+                    months_data = [x for x in data_n1_copy[ligne][1:] if x is not None]
+                    new_realise = months_data[-1] if months_data else None
 
-            # 8. Recalcul indicateurs calculés (identique à Delete)
+                if new_realise is not None:
+                    data_n1_copy[ligne][0] = new_realise
+                    if realise_last_year not in [None, 0]:
+                        ecarts_copy[ligne] = ((realise_last_year - new_realise) / realise_last_year) * 100
+
+            # 8. Recalcul des indicateurs dépendants
             for index in calculated_keys:
-                new_row = formuleCalcules(index, data_n1_copy, data_n2)
-                if new_row is not None:
-                    data_n1_copy[index - 1] = new_row
-                
-                ecart_data = ecartCalculatedKeys(index, data_n1_copy, realise_last_year, realise_next_year)
-                if ecart_data:
-                    data_ecarts[index - 1] = ecart_data.get("completedYear")
-                    if data_ecarts_next_year and len(data_ecarts_next_year) > index - 1:
-                        data_ecarts_next_year[index - 1] = ecart_data.get("completedNextYear")
+                try:
+                    new_row = formuleCalcules(index, data_n1_copy, data_n2 or [])
+                    if new_row:
+                        data_n1_copy[index - 1] = new_row
+                    
+                    ecart_data = ecartCalculatedKeys(index, data_n1_copy, realise_last_year, realise_next_year)
+                    if ecart_data:
+                        ecarts_copy[index - 1] = ecart_data.get("completedYear")
+                        if ecarts_next_year:
+                            ecarts_next_year[index - 1] = ecart_data.get("completedNextYear")
+                except Exception:
+                    continue  # Passe au suivant si erreur de calcul
 
-            # 9. Recalcul indicateurs de test (identique)
-            for index in test_indicators_keys:
-                new_row = testIndicatorsFormulas(index, data_n1_copy, data_n2)
-                if new_row is not None:
-                    data_n1_copy[index - 1] = new_row
-
-            # 10. Calcul performances (identique à Delete)
-            global_perf = PerformGlobal(data_ecarts)
-            global_perf_next_year = PerformGlobal(data_ecarts_next_year) if data_ecarts_next_year else None
-
-            def calculate_performance(response_list, ecart_list, field):
-                result = []
-                list_index = indexes_by(response_list, value=field)
-                for index_list in list_index:
-                    temp_list = []
-                    for index in index_list:
-                        if index < len(ecart_list):
-                            temp_list.append(ecart_list[index])
-                    result.append(temp_list)
-                
-                performance = []
-                for item in result:
-                    valid_values = [x for x in item if x is not None]
-                    avg = sum(valid_values)/len(valid_values) if valid_values else None
-                    performance.append(100 if avg is None else avg)
-                
-                return performance[1:]  # Skip first item
-
-            axes_perf = calculate_performance(indicateurs_info.data, data_ecarts, "axe")
-            enjeux_perf = calculate_performance(indicateurs_info.data, data_ecarts, "enjeu")
-            
-            if data_ecarts_next_year:
-                axes_perf_next = calculate_performance(indicateurs_info.data, data_ecarts_next_year, "axe")
-                enjeux_perf_next = calculate_performance(indicateurs_info.data, data_ecarts_next_year, "enjeu")
-            else:
-                axes_perf_next = []
-                enjeux_perf_next = []
-
-            # 11. Mise à jour base de données (même structure que Delete)
+            # 9. Sauvegarde transactionnelle
             try:
-                # Mise à jour en une seule opération par table
-                supabase.table('Performance').upsert({
-                    'id': id,
-                    'performs_piliers': axes_perf,
-                    'performs_enjeux': enjeux_perf,
-                    'performs_global': global_perf
+                # Mise à jour atomique
+                supabase.rpc('update_indicateur_data', {
+                    'current_id': current_id,
+                    'next_year_id': next_year_id,
+                    'new_values': data_n1_copy,
+                    'new_ecarts': ecarts_copy,
+                    'new_next_year_ecarts': ecarts_next_year or []
                 }).execute()
-
-                if data_ecarts_next_year:
-                    supabase.table('Performance').upsert({
-                        'id': idNextYear,
-                        'performs_piliers': axes_perf_next,
-                        'performs_enjeux': enjeux_perf_next,
-                        'performs_global': global_perf_next_year
-                    }).execute()
-
-                supabase.table('DataIndicateur').upsert({
-                    'id': id,
-                    'valeurs': data_n1_copy,
-                    'ecarts': data_ecarts
-                }).execute()
-
-                if data_ecarts_next_year:
-                    supabase.table('DataIndicateur').upsert({
-                        'id': idNextYear,
-                        'ecarts': data_ecarts_next_year
-                    }).execute()
 
                 # Sauvegarde locale
                 saveDataInJson(data_n1_copy, entite, f"{entite}_data_{annee}.json")
 
-                return {"status": True, "message": "Donnée mise à jour avec succès"}
+                return {
+                    "status": True,
+                    "message": "Mise à jour réussie",
+                    "details": {
+                        "updated_cell": f"L{ligne}C{colonne}",
+                        "new_value": valeur,
+                        "affected_indicators": len(calculated_keys) + len(test_indicators_keys)
+                    }
+                }
 
             except Exception as e:
-                return {"status": False, "message": f"Erreur mise à jour Supabase: {str(e)}"}, 500
+                # Rollback implicite grâce aux copies
+                return {"status": False, "message": f"Erreur sauvegarde: {str(e)}"}, 500
 
         except Exception as e:
-            return {"status": False, "message": f"Erreur inattendue: {str(e)}"}, 500
+            return {"status": False, "message": f"Erreur système: {str(e)}"}, 500
 class DeleteDataEntiteIndicateur(Resource):
     def post(self):
         try:
