@@ -9,7 +9,7 @@ from utils_data import readDataJson, saveDataInJson
 
 class GetDataEntiteIndicateur(Resource):
     # Appel des données indicateurs
-    def post(self):
+def post(self):
     args = request.get_json()
     annee = args["annee"]
     entite = args["entite"]
